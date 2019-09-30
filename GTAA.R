@@ -10,12 +10,6 @@ if (length(new.pkg))
   install.packages(new.pkg, dependencies = TRUE)
 sapply(pkg, require, character.only = TRUE)
 
-
-# con<-dbConnect(MySQL(),user="GTAA",password="gtaa",dbname="gtaa",host="dudrb1418.codns.com")
-# #sql <- paste("select cd '코드명' from gtaa_ticker column1 limit 100")
-# sql <- paste("select cd '코드명' from gtaa_ticker where cd not like '0%' and cd not like '1%' and cd not like '2%' and cd not like '3%' and cd not like '4%' and cd not like '5%' and cd not like '6%' and cd not like '7%' and cd not like '8%' and cd not like '9%'")
-# rows <- dbGetQuery(con, sql)
-# mychoices <- c(rows)
 mychoices <- c("SPY","IEV","EWJ","EEM","TLT","IEF","IYR","RWX","GLD","DBC")
 
 
