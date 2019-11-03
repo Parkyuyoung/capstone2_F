@@ -377,6 +377,6 @@ shinyServer(function(input,output,session) {
     )
   })
   
+  #deployApp()
 })
-#deployApp()
 

@@ -10,9 +10,9 @@ library(PerformanceAnalytics)
 library(d3heatmap)
 library(rsconnect)
 
-rsconnect::setAccountInfo(name='gtaa',
-                          token='CFD37C0B14B5A9ABDE321E09BE5B1E05',
-                          secret='MmVX3nR8+MAJIPxRBCQxn/F1Ka9pZmDHRj+84bGq')
+rsconnect::setAccountInfo(name='gtaa2', 
+                          token='BE94CCF00A5999C76B82EDEC9E2AF39E', 
+                          secret='MbNOpL0QVgvRljeQYvaZxtMOM3oqb3bkstEEuSRa')
 
 
 mychoice <- c("SPY","IEV","EWJ","EEM","TLT","IEF","IYR","RWX","GLD","DBC")
