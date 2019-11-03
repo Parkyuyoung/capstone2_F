@@ -82,7 +82,13 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                                                  fluidRow(
                                                    column(6, DT::dataTableOutput("port_table")),
                                                    column(6, DT::dataTableOutput("port_table_year"))
-                                                 )),
+                                                 ),
+                                                 fluidRow(
+                                                   column(1, offset = 10,downloadButton("download_monthly", "download(Monthly)")
+                                                   )),
+                                                 fluidRow(
+                                                   column(1, offset = 10,downloadButton("download_yearly", "download(Yearly)")
+                                                   ))),
                                         tabPanel("Weight", value="tab3",
                                                  br(),
                                                  plotlyOutput("wts_now"),
@@ -96,10 +102,6 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                                                  br(),
                                                  DT::dataTableOutput("dataTable_etf_raw"),
                                                  br(),
-                                                 fluidRow(
-                                                   column(1, offset = 10,
-                                                          downloadButton("downloadData", "Download Data")
-                                                   )),
                                                  br())
                             )
                    ),

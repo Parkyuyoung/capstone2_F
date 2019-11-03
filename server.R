@@ -268,6 +268,26 @@ shinyServer(function(input,output,session) {
         port_net_yr
       })
       
+      #export excel(month)
+      output$download_monthly <- downloadHandler(
+        filename = function() {
+          paste("Monthly Return", ".csv", sep="")
+        },
+        content = function(file) {
+          write.csv(data.frame(round(port_net[paste0(input$`range`[1],"::",input$`rang`[2])], 5)) %>%
+                      cbind('Date' = rownames(.), .), file)
+        }
+      )
+      #export excel(year)
+      output$download_yearly <- downloadHandler(
+        filename = function() {
+          paste("Yearly Return", ".csv", sep="")
+        },
+        content = function(file) {
+          write.csv(port_net_yr, file)
+        }
+      )
+      
       
       #Weight selection
       ######################################################################################################
@@ -343,14 +363,6 @@ shinyServer(function(input,output,session) {
           `rownames<-` (NULL)
       })
       
-      output$downloadData <- downloadHandler(
-        filename = function() {
-          paste("price_data", ".csv", sep="")
-        },
-        content = function(file) {
-          write.csv(data.frame(round(RETS$lst,4)), file)
-        }
-      )
       
     }
     
