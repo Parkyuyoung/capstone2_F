@@ -1,25 +1,28 @@
-library(shiny)
-library(shinyjs)
-library(markdown)
-library(shinyWidgets)
-library(quadprog)
-library(DT)
-library(plotly)
-library(quantmod)
-library(PerformanceAnalytics)
-library(d3heatmap)
-library(rsconnect)
 
-rsconnect::setAccountInfo(name='gtaa2', 
-                          token='BE94CCF00A5999C76B82EDEC9E2AF39E', 
-                          secret='MbNOpL0QVgvRljeQYvaZxtMOM3oqb3bkstEEuSRa')
+source("common.R")
 
+jscode <- '
+$(function() {
+  var $els = $("[data-proxy-click]");
+  $.each(
+    $els,
+    function(idx, el) {
+      var $el = $(el);
+      var $proxy = $("#" + $el.data("proxyClick"));
+      $el.keydown(function (e) {
+        if (e.keyCode == 13) {
+          $proxy.click();
+        }
+      });
+    }
+  );
+});
+'
 
-mychoice <- c("SPY","IEV","EWJ","EEM","TLT","IEF","IYR","RWX","GLD","DBC")
-
+### ui
 shinyUI(navbarPage("Global Tactical Asset Allocation",
                    theme = shinythemes::shinytheme("united"),
-                   #
+                   
                    # Main Page: Portfolio Return
                    tabPanel("Portfolio",
                             br(),
@@ -35,20 +38,34 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                                                                     max = Sys.Date(),
                                                                     format = "yyyy-mm-dd",
                                                                     separator = " - "),
-                                                     pickerInput(inputId = "pickerInput1", '자산 선택',
-                                                                 choices = mychoice, 
-                                                                 options = list(`actions-box` = TRUE,  size = 12, 
-                                                                                `selected-text-format` = "count >= 10"), 
-                                                                 multiple = TRUE),
-                                                     radioButtons("radioBtn1", 
-                                                                  "전략 선택", 
-                                                                  c("동일비중 포트폴리오 (Equal Weight Portfolio)" = "radioBtn1_sel1",
-                                                                    "최소분산 포트폴리오(Minimum Variance Portfolio)" = "radioBtn1_sel2",
-                                                                    "최대분산효과 포트폴리오(Maximum Diversifed Portfolio)" = "radioBtn1_sel3",
-                                                                    "위험균형 포트폴리오(Equal Risk Contribution Portfolio)" = "radioBtn1_sel4"
-                                                                    #,"모멘텀 포트폴리오(Momentum Portfolio)" = "radioBtn1_sel5"
-                                                                    ),
-                                                                  selected = "radioBtn1_sel4"),
+                                                     tags$head(tags$script(HTML(jscode))),
+                                                     tagAppendAttributes(
+                                                       #textInput("text", NULL, "foo"),
+                                                       textInput("ticker", "자산 입력", "SPY"), 
+                                                       `data-proxy-click` = "btn_ewf"
+                                                     ),
+                                                     actionButton("btn_ewf", "입력"),
+                                                     actionButton("btn_ewf_delete", "삭제"),
+                                                     #actionButton("test_btn_ewf", "테스트"),
+                                                     p("  "),
+                                                     verbatimTextOutput("nText"),
+                                                     br(),
+                                                     radioButtons("radioBtn1",  
+                                                                  func_Title("radioBtn1"),
+                                                                  func_TitleList("radioBtn1"),
+                                                                  selected = 0),
+                                                     radioButtons("radioBtn2", 
+                                                                  func_Title("radioBtn2"),
+                                                                  func_TitleList("radioBtn2"),
+                                                                  selected = 0),
+                                                     radioButtons("radioBtn3", 
+                                                                  func_Title("radioBtn3"),
+                                                                  func_TitleList("radioBtn3"),
+                                                                  selected = 0),
+                                                     radioButtons("radioBtn4", 
+                                                                  func_Title("radioBtn4"),
+                                                                  func_TitleList("radioBtn4"),
+                                                                  selected = 0),
                                                      lapply(1:length(mychoice), function(i) {
                                                        column(5,
                                                               numericInput(inputId = paste0("numeric_rate_", i),
@@ -58,14 +75,43 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                                                      }),
                                                      fluidPage(
                                                        useShinyjs(),
-                                                       uiOutput(outputId = "out2"),
-                                                       numericInput(inputId = "numeric_Momentum",
-                                                                    label = "numeric_Momentum",
-                                                                    min = 1, max = 5, step = 1, value = 1, width='100px')
+                                                       numericInput(inputId = "numeric_momentum", label = "numeric_momentum",
+                                                                    min = 1, max = 10, step = 1, value = 1, width='100px')
                                                      ),
+                                                     fluidPage(
+                                                       useShinyjs(),
+                                                       numericInput(inputId = "numeric_multifac", label = "numeric_multifac",
+                                                                    min = 1, max = 10, step = 1, value = 3, width='100px')
+                                                     ),
+                                                     fluidPage(
+                                                       useShinyjs(),
+                                                       numericInput(inputId = "numeric_min", label = "numeric_min",
+                                                                    min = 0.00, max = 0.9, step = 0.1, value = 0)
+                                                     ),
+                                                     fluidPage(
+                                                       useShinyjs(),
+                                                       numericInput(inputId = "numeric_max", label = "numeric_max",
+                                                                    min = 0.00, max = 1, step = 1, value = 1)
+                                                     ),
+                                                     p("  "),
+                                                     sliderInput('sliderInput_lookback', '룩백', 
+                                                                 min = 1, max = 100, step = 1, value = 12),
+                                                     sliderInput('sliderInput_rebalancing', '리밸런싱', 
+                                                                 min = 1, max = 48, step = 1, value = 3),
+                                                     sliderInput('sliderInput_fee', '매매비용', 
+                                                                 min = 0.001, max = 0.01, step = 0.001, value = 0.003),
+                                                     #actionButton("btn_preview", "미리보기", placement="right"),
+                                                     p("  "),
+                                                     br(),
                                                      actionButton("goButton", "조회")
                                                    ),
-                                                   mainPanel(tabPanel("correlation", "상관관계(correlation)", d3heatmapOutput("heatmap", width = "100%", height="500px")))
+                                                   mainPanel(tabPanel("correlation", "상관관계(correlation)", 
+                                                                      d3heatmapOutput("heatmap", width = "100%", height="500px")),
+                                                             br(),br(),br(),br(),br(),br(),br(),
+                                                             tabPanel("preview", "", 
+                                                                      plotlyOutput("plot_preview"),
+                                                                      br(),
+                                                                      DT::dataTableOutput("dataTable_preview"))),
                                                  )
                                         ),
                                         tabPanel("Cumulative Return", value="tab2", 
@@ -84,10 +130,10 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                                                    column(6, DT::dataTableOutput("port_table_year"))
                                                  ),
                                                  fluidRow(
-                                                   column(1, offset = 10,downloadButton("download_monthly", "download(Monthly)")
+                                                   column(1, offset = 10, downloadButton("download_monthly", "download(Monthly)")
                                                    )),
                                                  fluidRow(
-                                                   column(1, offset = 10,downloadButton("download_yearly", "download(Yearly)")
+                                                   column(1, offset = 10, downloadButton("download_yearly", "download(Yearly)")
                                                    ))),
                                         tabPanel("Weight", value="tab3",
                                                  br(),
@@ -105,43 +151,6 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                                                  br())
                             )
                    ),
-                   # Description for strategy
-                   tabPanel("Description",
-                            tabsetPanel(
-                              tabPanel("Strategy",
-                                       br(),
-                                       strong("Global Dynamic Asset Allocation"),
-                                       br(),
-                                       tags$ul(
-                                         tags$li("Strategy to perform asset allocation using momentum"),
-                                         tags$li("Invested in top 5 assets, which were among the top 10 global assets"),
-                                         tags$li("Calculate momentum indices using returns from 3 months to 12 months")
-                                       ),
-                                       br(),
-                                       strong("Weight of each asset"),
-                                       withMathJax(),
-                                       br(),
-                                       tags$ul(
-                                         tags$li("Variance of the portfolio is minimized"),
-                                         tags$li("The sum of the total weights is 1"),
-                                         tags$li("At least 10% and maximum 30% for each category to prevent corner solution")
-                                       ),
-                                       uiOutput('ex1'),
-                                       br(),
-                                       strong("ETC"),
-                                       br(),
-                                       tags$ul(
-                                         tags$li("Use a adjusted stock price that includes dividends"),
-                                         tags$li("Buy / sell commission 30bp"),
-                                         tags$li("Rebalancing by the end of the month")
-                                       )
-                              ),
-                              tabPanel("Universe",
-                                       br(),
-                                       tableOutput("univ")
-                              )
-                            )),
-                   
                    # Author: Henry
                    tabPanel("About developer",
                             strong("홍성주"),
@@ -169,7 +178,6 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                               tags$li("github : minclasse"),
                               tags$li("major : Computer Science "),
                               br()
-                              
                             ),
                             div(),
                             strong("최영규"),
@@ -179,7 +187,6 @@ shinyUI(navbarPage("Global Tactical Asset Allocation",
                               tags$li("github : dudrb1418"),
                               tags$li("major : Computer Science  "),
                               br()
-                              
                             )
                    )
                    
